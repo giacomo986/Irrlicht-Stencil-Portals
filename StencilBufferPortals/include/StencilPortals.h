@@ -1,20 +1,14 @@
 #ifndef STENCILPORTALS_H
 #define STENCILPORTALS_H
 
-
-#include <windows.h>
 #include <irrlicht.h>
-#include <iostream>
 #include <GL/gl.h>
 #include "PortalNode.h"
 #include "PortalBox.h"
 
 using namespace irr;
-using namespace core;
 using namespace scene;
 using namespace video;
-
-#pragma comment(lib, "Irrlicht.lib")
 
 
 class StencilPortals

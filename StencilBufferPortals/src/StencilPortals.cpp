@@ -1,14 +1,8 @@
 #include "StencilPortals.h"
 
-StencilPortals::StencilPortals()
-{
-    //ctor
-}
+StencilPortals::StencilPortals() {}
 
-StencilPortals::~StencilPortals()
-{
-    //ctor
-}
+StencilPortals::~StencilPortals() {}
 
 void StencilPortals::InitStencilPortals(IrrlichtDevice* Device,
                                         ICameraSceneNode* MainCamera,
@@ -25,6 +19,7 @@ void StencilPortals::InitStencilPortals(IrrlichtDevice* Device,
 
     portal1 = new PortalNode(smgr->getRootSceneNode(), smgr, 16, 1);
     portal1->setPosition(portal1Position);
+    portal1->setRotation(portal1Rotation);
 
 	portal2 = new PortalNode(smgr->getRootSceneNode(), smgr, 17, 2);
     portal2->setPosition(portal2Position);
@@ -36,6 +31,7 @@ void StencilPortals::InitStencilPortals(IrrlichtDevice* Device,
 
 	PortalBox1->setScale(core::vector3df(1.01f, 1.01f, 1.01f));
 	PortalBox1->setPosition(portal1Position);
+	PortalBox1->setRotation(portal1Rotation);
 
 	PortalBox2->setScale(core::vector3df(1.01f, 1.01f, 1.01f));
     PortalBox2->setPosition(portal2Position);
@@ -60,13 +56,22 @@ void StencilPortals::refreshStencilBuffer()
 void StencilPortals::setupPortal1()
 {
     core::vector3df CameraPosition =  mainCamera->getPosition() - portal1Position;
-    CameraPosition.rotateXZBy(-90);
+    CameraPosition.rotateXZBy(180 + (portal1Rotation - portal2Rotation).Y /* -90*/);
     CameraPosition += portal2Position;
 
     portalCamera1->setPosition(CameraPosition);
-    portalCamera1->setRotation(mainCamera->getRotation() + core::vector3df(0, 90, 0));
+    portalCamera1->setRotation(mainCamera->getRotation() +
+                               core::vector3df(0, 180, 0) +
+                               portal2Rotation - portal1Rotation /*core::vector3df(0, 90, 0)*/);
 
-    driver->setClipPlane(irr::u32(0), plane3df(portal2Position.X, portal2Position.Y, portal2Position.Z,1,0,0), true); // clipping everything between the camera and the portal
+    core::vector3df clipPlaneDirection(0, 0, -1); // default value because portal without transformation is facing the main camera
+    clipPlaneDirection.rotateXZBy(-portal2Rotation.Y); // rotate the clip plane to render only what the portal is facing
+    driver->setClipPlane(irr::u32(0), core::plane3df(portal2Position.X,
+                                                     portal2Position.Y,
+                                                     portal2Position.Z,
+                                                     clipPlaneDirection.X,
+                                                     clipPlaneDirection.Y,
+                                                     clipPlaneDirection.Z), true); // clipping everything between the camera and the portal
 
     glStencilFunc(GL_EQUAL, 0x1, 0xFF); // Draw the scene where the stencil value is 1
     glStencilOp(GL_KEEP,GL_KEEP,GL_KEEP); // do not change the stencil value
@@ -80,13 +85,22 @@ void StencilPortals::setupPortal1()
 void StencilPortals::setupPortal2()
 {
     core::vector3df CameraPosition =  mainCamera->getPosition() - portal2Position;
-    CameraPosition.rotateXZBy(90);
+    CameraPosition.rotateXZBy(180 + (portal2Rotation - portal1Rotation).Y/*90*/);
     CameraPosition += portal1Position;
 
     portalCamera2->setPosition(CameraPosition);
-    portalCamera2->setRotation(mainCamera->getRotation() + core::vector3df(0, -90, 0));
+    portalCamera2->setRotation(mainCamera->getRotation() +
+                               core::vector3df(0, 180, 0) +
+                               portal1Rotation - portal2Rotation /*core::vector3df(0, -90, 0)*/);
 
-    driver->setClipPlane(irr::u32(0), plane3df(portal1Position.X, portal1Position.Y, portal1Position.Z,0,0,-1), true); // clipping everything between the camera and the portal
+    core::vector3df clipPlaneDirection(0, 0, -1); // default value because portal without transformation is facing the main camera
+    clipPlaneDirection.rotateXZBy(-portal1Rotation.Y); // rotate the clip plane to render only what the portal is facing
+    driver->setClipPlane(irr::u32(0), core::plane3df(portal1Position.X,
+                                                     portal1Position.Y,
+                                                     portal1Position.Z,
+                                                     clipPlaneDirection.X,
+                                                     clipPlaneDirection.Y,
+                                                     clipPlaneDirection.Z), true); // clipping everything between the camera and the portal
 
     glStencilFunc(GL_EQUAL, 0x2, 0xFF); // Draw the scene where the stencil value is 2
     glStencilOp(GL_KEEP,GL_KEEP,GL_KEEP); // do not change the stencil value
@@ -100,14 +114,26 @@ void StencilPortals::setupPortal2()
 void StencilPortals::checkCollisionWithPortals()
 {
     core::vector3df Position = mainCamera->getPosition();
+    core::vector3df Collision[2] = {{30,40,20},{-30,-40,5}};
 
-    if((Position.X < -165 && Position.X > -180) && (Position.Y < 20 && Position.Y > -60) && (Position.Z < 120 && Position.Z > 60))
+
+    Position -= portal2Position;
+    Position.rotateXZBy(portal2Rotation.Y);
+
+    if((Position.X < Collision[0].X && Position.X > Collision[1].X) &&
+       (Position.Y < Collision[0].Y && Position.Y > Collision[1].Y) &&
+       (Position.Z < Collision[0].Z && Position.Z > Collision[1].Z))
     {
         mainCamera->setPosition(portalCamera2->getPosition());
         mainCamera->setRotation(portalCamera2->getRotation());
     }
 
-    if((Position.X < -60 && Position.X > -120) && (Position.Y < 20 && Position.Y > -60) && (Position.Z < 220 && Position.Z > 205))
+    Position = mainCamera->getPosition() - portal1Position;
+    Position.rotateXZBy(portal1Rotation.Y);
+
+    if((Position.X < Collision[0].X && Position.X > Collision[1].X) &&
+       (Position.Y < Collision[0].Y && Position.Y > Collision[1].Y) &&
+       (Position.Z < Collision[0].Z && Position.Z > Collision[1].Z))
     {
         mainCamera->setPosition(portalCamera1->getPosition());
         mainCamera->setRotation(portalCamera1->getRotation());
