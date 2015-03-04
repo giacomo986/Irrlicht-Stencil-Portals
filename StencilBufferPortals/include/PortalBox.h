@@ -1,16 +1,9 @@
 #ifndef PORTALBOX_H
 #define PORTALBOX_H
 
-
 #include <irrlicht.h>
-#include <GL/gl.h>
 
 using namespace irr;
-
-#ifdef _MSC_VER
-#pragma comment(lib, "Irrlicht.lib")
-#endif
-
 
 class PortalBox : public scene::ISceneNode
 {

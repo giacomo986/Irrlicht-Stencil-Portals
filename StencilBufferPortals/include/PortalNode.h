@@ -7,11 +7,6 @@
 
 using namespace irr;
 
-#ifdef _MSC_VER
-#pragma comment(lib, "Irrlicht.lib")
-#endif
-
-
 class PortalNode : public scene::ISceneNode
 {
 

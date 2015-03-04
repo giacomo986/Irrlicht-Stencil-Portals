@@ -5,6 +5,11 @@ StencilPortals::StencilPortals()
     //ctor
 }
 
+StencilPortals::~StencilPortals()
+{
+    //ctor
+}
+
 void StencilPortals::InitStencilPortals(IrrlichtDevice* Device,
                                         ICameraSceneNode* MainCamera,
                                         ICameraSceneNode* PortalCamera1,
